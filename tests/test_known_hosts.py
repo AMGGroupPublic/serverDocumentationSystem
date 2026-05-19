@@ -119,18 +119,37 @@ def test_cli_trust_explicit_host(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
 
 def test_cli_trust_all(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: list[str] = []
+    seen: list[tuple[str, int]] = []
 
-    def fake(host: str, kh_path: Path, **_: Any) -> kh.TrustResult:
-        seen.append(host)
+    def fake(host: str, kh_path: Path, *, port: int = 22, **_: Any) -> kh.TrustResult:
+        seen.append((host, port))
         return kh.TrustResult(host=host, added=1)
 
     monkeypatch.setattr("serverdocs.__main__.trust_host", fake)
-    cfg = _write_cfg(tmp_path)
+    cfg = _write_cfg_with_ports(tmp_path)
     runner = CliRunner()
     result = runner.invoke(cli, ["trust", "--config", str(cfg), "--all"])
     assert result.exit_code == 0
-    assert seen == ["dev001.example.com", "dev002.example.com"]
+    assert seen == [("dev001.example.com", 22), ("dev002.example.com", 2222)]
+    # Non-default port surfaces in output; default port is suppressed.
+    assert "dev002.example.com:2222" in result.output
+    assert "dev001.example.com:22" not in result.output
+
+
+def _write_cfg_with_ports(tmp: Path) -> Path:
+    cfg = {
+        "output_dir": str(tmp / "out"),
+        "ssh_keys_dir": str(tmp / "keys"),
+        "known_hosts": str(tmp / "kh"),
+        "git": {"enabled": False},
+        "servers": [
+            {"name": "dev001", "hostname": "dev001.example.com", "user": "root", "keyfile": "k"},
+            {"name": "dev002", "hostname": "dev002.example.com", "user": "root", "keyfile": "k", "port": 2222},
+        ],
+    }
+    p = tmp / "servers.yaml"
+    p.write_text(yaml.safe_dump(cfg))
+    return p
 
 
 def test_cli_trust_requires_target(tmp_path: Path) -> None:

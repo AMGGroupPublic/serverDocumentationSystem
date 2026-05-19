@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-19
+
+### Added
+- `port` field on each server entry in the config (defaults to 22, validated 1-65535)
+- `pipeline._scan_server` and `serverdocs trust --all` honour the per-server port
+- `trust` output shows `host:port` only when port is non-default
+
 ## [0.2.2] - 2026-05-19
 
 ### Changed

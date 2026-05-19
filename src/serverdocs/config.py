@@ -29,6 +29,7 @@ class ServerEntry(BaseModel):
     ip: str | None = None
     user: str
     keyfile: str
+    port: int = Field(default=22, ge=1, le=65535)
     adapters: list[AdapterName] = Field(default_factory=lambda: ["auto"])
 
     @property

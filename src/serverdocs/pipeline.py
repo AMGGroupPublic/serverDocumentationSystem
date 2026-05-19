@@ -76,6 +76,7 @@ async def _scan_server(server: ServerEntry, config: Config) -> HostScan:
         keyfile=config.ssh_keys_dir / server.keyfile,
         known_hosts=config.known_hosts,
         timeout=float(config.discovery.timeout_seconds),
+        port=server.port,
     )
     scan = HostScan(server=server)
     try:

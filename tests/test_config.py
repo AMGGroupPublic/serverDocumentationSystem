@@ -43,6 +43,28 @@ def test_server_address_prefers_ip(tmp_path: Path) -> None:
     assert cfg.servers[0].address == "10.0.0.5"
 
 
+def test_port_defaults_to_22() -> None:
+    cfg = load_config(_example_path())
+    by_name = {s.name: s for s in cfg.servers}
+    assert by_name["dev001"].port == 22
+    assert by_name["dev002"].port == 2222
+
+
+def test_port_out_of_range_rejected(tmp_path: Path) -> None:
+    raw = {
+        "output_dir": "/tmp/out",
+        "ssh_keys_dir": "/keys",
+        "known_hosts": "/data/known_hosts",
+        "servers": [
+            {"name": "x", "hostname": "x", "user": "root", "keyfile": "k", "port": 70000}
+        ],
+    }
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml.safe_dump(raw))
+    with pytest.raises(Exception):  # noqa: B017
+        load_config(p)
+
+
 def test_invalid_config_raises(tmp_path: Path) -> None:
     p = tmp_path / "bad.yaml"
     p.write_text("servers: not-a-list\n")

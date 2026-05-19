@@ -114,20 +114,23 @@ def trust(
     cfg = load_config(config_path)
     if all_hosts and hosts:
         raise click.UsageError("Pass either --all or explicit hosts, not both.")
+    targets: list[tuple[str, int]]
     if all_hosts:
-        targets = [s.address for s in cfg.servers]
+        # Honour each server's configured port when iterating from config.
+        targets = [(s.address, s.port) for s in cfg.servers]
     elif hosts:
-        targets = list(hosts)
+        targets = [(h, port) for h in hosts]
     else:
         raise click.UsageError("Specify one or more hosts, or use --all.")
 
     fail = False
-    for host in targets:
-        res = trust_host(host, cfg.known_hosts, port=port, timeout=timeout)
+    for host, host_port in targets:
+        res = trust_host(host, cfg.known_hosts, port=host_port, timeout=timeout)
+        label = host if host_port == 22 else f"{host}:{host_port}"
         if res.ok:
-            click.echo(f"{host}: added {res.added}, skipped {res.skipped}")
+            click.echo(f"{label}: added {res.added}, skipped {res.skipped}")
         else:
-            click.echo(f"{host}: FAILED — {res.error}", err=True)
+            click.echo(f"{label}: FAILED — {res.error}", err=True)
             fail = True
     if fail:
         sys.exit(1)

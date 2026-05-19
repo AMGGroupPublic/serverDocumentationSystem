@@ -36,10 +36,12 @@ servers:
     # ip: 10.0.0.10        # optional, overrides hostname for connection
     user: root
     keyfile: dev001_ed25519 # filename inside ssh_keys_dir
+    # port: 22             # optional, defaults to 22
     adapters: [auto]        # or explicit: [lxd, docker]
 
   - name: dev002
     hostname: dev002.mynetwork.com
     user: root
     keyfile: dev002_ed25519
+    port: 2222              # non-default SSH port
     adapters: [docker]
