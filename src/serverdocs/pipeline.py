@@ -279,6 +279,74 @@ def _existing_entities(output_dir: Path, host: str) -> set[tuple[str, str]]:
     return out
 
 
+# ---------------------------------------------------------------- purge
+
+
+async def scan_host(config: Config, host: str) -> tuple[ServerEntry, HostScan]:
+    """Scan a single configured host. ``host`` matches either hostname or name."""
+    server = next(
+        (s for s in config.servers if s.hostname == host or s.name == host),
+        None,
+    )
+    if server is None:
+        raise ValueError(f"host not in config: {host}")
+    scan = await _scan_server(server, config)
+    return server, scan
+
+
+def disappeared_for(config: Config, host: str, scan: HostScan) -> list[tuple[str, str]]:
+    """Return sorted (type, name) tuples that have on-disk dirs but weren't in scan."""
+    seen = {(e.type, e.name) for e in scan.entities}
+    existing = _existing_entities(config.output_dir, host)
+    return sorted(existing - seen)
+
+
+def purge_entities(config: Config, host: str, entities: list[tuple[str, str]]) -> int:
+    """``shutil.rmtree`` the listed entity dirs. Returns count actually removed."""
+    removed = 0
+    for t, n in entities:
+        d = config.output_dir / "servers" / host / t / n
+        if d.is_dir():
+            shutil.rmtree(d)
+            removed += 1
+    return removed
+
+
+def rerender_host_index(config: Config, host: str, scan: HostScan, *, removed: int) -> None:
+    """Re-render and commit just the host INDEX after a manual purge.
+
+    The full ``_render_all`` regenerates README from *every* server's scan; we
+    only have one host's data here, so re-rendering README would clobber the
+    other hosts' rows. Scoping to the single INDEX avoids that.
+    """
+    customized: set[tuple[str, str]] = set()
+    for entity in scan.entities:
+        notes_path = config.output_dir / "servers" / host / entity.type / entity.name / "NOTES.md"
+        # If NOTES doesn't exist yet the entity is fresh; treat as uncustomized.
+        if not notes_path.exists():
+            continue
+        scaffold = render_notes(entity, metrics_url=None)
+        if notes_path.read_text(encoding="utf-8") != scaffold:
+            customized.add((entity.type, entity.name))
+
+    index_md = render_host_index(
+        host,
+        scan.entities,
+        disappeared=[],  # we just purged — nothing left to list
+        scan_failed=False,
+        customized_notes=customized,
+    )
+    store = TreeStore(config.output_dir, dry_run=False)
+    store.write(Path("servers") / host / "INDEX.md", index_md)
+
+    if config.git.enabled:
+        repo = _repo(config)
+        repo.ensure_init()
+        msg = f"purge: {_now()} {host} -{removed}"
+        if repo.commit_all(msg):
+            log.info("committed: %s", msg)
+
+
 # ---------------------------------------------------------------- commit
 
 

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-05-19
+
+### Added
+- `serverdocs purge-disappeared HOST` — explicit, prompt-gated cleanup
+  for entity dirs that no longer exist on a host. Performs a fresh
+  scan, prints the list of (type, name) pairs that would be removed,
+  and asks for confirmation before deleting. `-y`/`--yes` skips the
+  prompt for scripting. After purge the host's INDEX is regenerated
+  (Disappeared block empties) and committed to the doc repo.
+- Refuses to run if the live scan failed — without fresh data we can't
+  tell "host unreachable" from "container removed".
+
+### Reverted
+- The automatic "delete disappeared entities on every scan" behaviour
+  from the briefly-shipped 0.2.14 prototype. Auto-deletion lost the
+  intentional historical breadcrumbs in the INDEX's Disappeared block.
+  Cleanup is now opt-in via the new command.
+
 ## [0.2.13] - 2026-05-19
 
 ### Added

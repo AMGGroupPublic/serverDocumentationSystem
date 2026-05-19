@@ -98,6 +98,7 @@ also honours the `SERVERDOCS_CONFIG` env var).
 | `serverdocs dry-run` | Scan and print diffs, write nothing, no git commit |
 | `serverdocs run` | Full scan: discover, render, commit locally |
 | `serverdocs push` | Push the local doc repo to its configured remote |
+| `serverdocs purge-disappeared HOST` | Scan HOST, list entity dirs that no longer exist on it, prompt for confirmation, then delete (`-y` to skip the prompt) |
 
 ## Configuration
 

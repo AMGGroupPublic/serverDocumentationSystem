@@ -6,7 +6,14 @@ from pathlib import Path
 
 from serverdocs.config import Config, DiscoveryConfig, GitConfig, ServerEntry
 from serverdocs.model import Entity
-from serverdocs.pipeline import HostScan, _remove_orphan_hosts, _render_all
+from serverdocs.pipeline import (
+    HostScan,
+    _remove_orphan_hosts,
+    _render_all,
+    disappeared_for,
+    purge_entities,
+    rerender_host_index,
+)
 
 
 def _config(tmp: Path) -> Config:
@@ -261,3 +268,57 @@ def test_remove_orphan_hosts_skips_when_config_empty(tmp_path: Path) -> None:
 
     assert removed == 0
     assert (servers / "dev001.example.com").is_dir()
+
+
+def test_disappeared_for_returns_dirs_not_in_scan(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    # Pre-populate with two entity dirs
+    _render_all(
+        cfg,
+        [HostScan(server=cfg.servers[0], entities=[_entity("mymail"), _entity("oldsvc")])],
+        dry_run=False,
+    )
+    # Fresh scan only sees one
+    scan = HostScan(server=cfg.servers[0], entities=[_entity("mymail")])
+
+    out = disappeared_for(cfg, "dev001.example.com", scan)
+
+    assert out == [("docker", "oldsvc")]
+
+
+def test_purge_entities_removes_dirs_and_returns_count(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _render_all(
+        cfg,
+        [HostScan(server=cfg.servers[0], entities=[_entity("a"), _entity("b"), _entity("c")])],
+        dry_run=False,
+    )
+    base = cfg.output_dir / "servers" / "dev001.example.com" / "docker"
+
+    removed = purge_entities(cfg, "dev001.example.com", [("docker", "a"), ("docker", "c")])
+
+    assert removed == 2
+    assert not (base / "a").exists()
+    assert (base / "b").is_dir()
+    assert not (base / "c").exists()
+
+
+def test_rerender_host_index_clears_disappeared_block(tmp_path: Path) -> None:
+    """After purge_entities + rerender, the INDEX must no longer list disappeared."""
+    cfg = _config(tmp_path)
+    _render_all(
+        cfg,
+        [HostScan(server=cfg.servers[0], entities=[_entity("alive"), _entity("dead")])],
+        dry_run=False,
+    )
+    # Simulate the post-purge state: only "alive" present on disk.
+    import shutil
+    shutil.rmtree(cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "dead")
+
+    scan_after_purge = HostScan(server=cfg.servers[0], entities=[_entity("alive")])
+    rerender_host_index(cfg, "dev001.example.com", scan_after_purge, removed=1)
+
+    index = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
+    assert "Disappeared" not in index
+    assert "dead" not in index
+    assert "alive" in index

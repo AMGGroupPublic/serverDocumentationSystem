@@ -13,7 +13,13 @@ import click
 
 from . import __version__
 from .config import load_config
-from .pipeline import run as pipeline_run
+from .pipeline import (
+    disappeared_for,
+    purge_entities,
+    rerender_host_index,
+    run as pipeline_run,
+    scan_host,
+)
 from .store.git import GitRepo
 from .store.known_hosts import trust_host
 
@@ -134,6 +140,54 @@ def trust(
             fail = True
     if fail:
         sys.exit(1)
+
+
+@cli.command("purge-disappeared")
+@config_option
+@click.option("-y", "--yes", is_flag=True, help="Skip confirmation prompt.")
+@click.argument("host")
+def purge_disappeared(config_path: Path, yes: bool, host: str) -> None:
+    """Delete entity dirs under HOST that are no longer present on the live host.
+
+    Performs a fresh scan of HOST, lists what would be deleted, and prompts
+    for confirmation before removing anything. HOST may be a hostname or the
+    short ``name`` from the config file.
+    """
+    cfg = load_config(config_path)
+    try:
+        server, scan = asyncio.run(scan_host(cfg, host))
+    except ValueError as exc:
+        click.echo(f"error: {exc}", err=True)
+        sys.exit(2)
+
+    if scan.scan_failed:
+        click.echo(
+            f"{server.hostname}: scan failed — {scan.error}\n"
+            "refusing to purge while the host is unreachable.",
+            err=True,
+        )
+        sys.exit(2)
+
+    disappeared = disappeared_for(cfg, server.hostname, scan)
+    if not disappeared:
+        click.echo(f"{server.hostname}: no disappeared entities to purge.")
+        return
+
+    noun = "entity" if len(disappeared) == 1 else "entities"
+    click.echo(f"{server.hostname}: {len(disappeared)} disappeared {noun}:")
+    for t, n in disappeared:
+        click.echo(f"  - {t}/{n}")
+
+    if not yes:
+        click.confirm(
+            f"\nDelete {len(disappeared)} director{'y' if len(disappeared) == 1 else 'ies'} under "
+            f"{cfg.output_dir / 'servers' / server.hostname}?",
+            abort=True,
+        )
+
+    removed = purge_entities(cfg, server.hostname, disappeared)
+    rerender_host_index(cfg, server.hostname, scan, removed=removed)
+    click.echo(f"removed {removed} {'entity' if removed == 1 else 'entities'} from {server.hostname}.")
 
 
 if __name__ == "__main__":
