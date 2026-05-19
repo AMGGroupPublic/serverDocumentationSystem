@@ -12,7 +12,7 @@ from serverdocs.render.notes import render_notes
 
 
 def test_version() -> None:
-    assert serverdocs.__version__ == "0.2.10"
+    assert serverdocs.__version__ == "0.2.11"
 
 
 def test_adapter_names() -> None:
@@ -32,11 +32,15 @@ def _sample_entity() -> Entity:
     )
 
 
-def test_render_auto_has_frontmatter() -> None:
+def test_render_auto_has_inline_attributes() -> None:
+    """Metadata sits at the bottom as SilverBullet inline attributes
+    (queryable) rather than YAML frontmatter at the top, so the page
+    opens with the H1 heading instead of a YAML block."""
     out = render_auto(_sample_entity())
-    assert out.startswith("---\n")
-    assert "host: dev001.example.com" in out
-    assert "name: mymail" in out
+    assert out.startswith("# mymail (")
+    assert "[host: dev001.example.com]" in out
+    assert "[name: mymail]" in out
+    assert "[auto-generated: true]" in out
 
 
 def test_render_notes_transcludes_auto() -> None:

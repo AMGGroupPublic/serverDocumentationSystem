@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-05-19
+
+### Changed
+- Host `INDEX.md` and entity `AUTO.md` no longer start with a YAML
+  frontmatter block. The page now opens with its heading. Metadata
+  (host, type, name, state, last-seen, auto-generated) is emitted at
+  the very bottom of the page as SilverBullet inline attributes
+  (`[host: foo]` etc.), which remain queryable from SB without
+  pushing the visible heading down the page.
+
 ## [0.2.10] - 2026-05-19
 
 ### Changed

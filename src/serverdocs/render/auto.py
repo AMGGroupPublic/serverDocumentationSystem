@@ -11,15 +11,6 @@ from jinja2 import Environment
 from ..model import Entity
 
 _TEMPLATE = """\
----
-host: {{ entity.host }}
-type: {{ entity.type }}
-name: {{ entity.name }}
-state: {{ entity.state }}
-last_seen: {{ entity.last_seen }}
-auto_generated: true
----
-
 # {{ entity.name }} ({{ entity.type }} on {{ entity.host }})
 
 | Field | Value |
@@ -52,6 +43,8 @@ auto_generated: true
 ---
 
 [[servers/{{ entity.host }}/INDEX#{{ entity.host }}|← Back to {{ entity.host }}]]
+
+[host: {{ entity.host }}] [type: {{ entity.type }}] [name: {{ entity.name }}] [state: {{ entity.state }}] [last-seen: {{ entity.last_seen }}] [auto-generated: true]
 """
 
 

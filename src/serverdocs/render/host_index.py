@@ -7,11 +7,6 @@ from jinja2 import Environment
 from ..model import Entity
 
 _TEMPLATE = """\
----
-host: {{ host }}
-auto_generated: true
----
-
 # DNS Name : {{ host }}
 
 {% if scan_failed %}
@@ -40,6 +35,8 @@ These entities were present in previous runs but were not seen on the latest sca
 ---
 
 [[README#Server Documentation|← Back to overview]]
+
+[host: {{ host }}] [auto-generated: true]
 """
 
 
