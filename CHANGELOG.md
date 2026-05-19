@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `serverdocs-scheduler` compose service: long-running container that scans on
+  boot then every `SCAN_INTERVAL` seconds (default 3600). Reuses the same
+  `serverdocs:dev` image so a single build covers both services.
+
 ## [0.2.5] - 2026-05-19
 
 ### Added

@@ -59,6 +59,25 @@ non-default file. Override with `--config <path>` or `SERVERDOCS_CONFIG=<path>`.
 The wrapper auto-detects `docker compose` (v2) vs `docker-compose` (legacy)
 and disables TTY allocation when piping output.
 
+### Scheduled scans
+
+A long-running `serverdocs-scheduler` service is included in the compose stack.
+It runs an initial scan on boot, then re-scans every `SCAN_INTERVAL` seconds
+(default `3600` = hourly). Start it with:
+
+```bash
+cd docker && docker compose up -d serverdocs-scheduler silverbullet
+```
+
+Override the interval inline or in a `.env` file:
+
+```bash
+SCAN_INTERVAL=900 docker compose up -d serverdocs-scheduler
+```
+
+The one-shot `serverdocs` service still exists for manual scans via the
+`./serverdocs` wrapper — both share the same image.
+
 ## Commands
 
 All commands accept `--config <path>` (defaults to `/config/servers.yaml`;

@@ -12,6 +12,34 @@ services:
       - ../data:/data
     command: ["run", "--config", "/config/servers.yaml"]
 
+  serverdocs-scheduler:
+    # Long-running companion: scans on startup then every SCAN_INTERVAL seconds.
+    # Uses the same image as the one-shot `serverdocs` service so a single
+    # `docker compose build` covers both.
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: serverdocs:dev
+    container_name: serverdocs-scheduler
+    restart: unless-stopped
+    environment:
+      # Default: every hour. Override per-deployment.
+      SCAN_INTERVAL: "3600"
+    volumes:
+      - ../config:/config:ro
+      - ../keys:/keys:ro
+      - ../data:/data
+    entrypoint: ["/bin/sh", "-c"]
+    # Initial scan on boot, then loop. Failures of one scan don't stop the loop.
+    command:
+      - |
+        echo "[scheduler] initial scan"
+        serverdocs run || true
+        while sleep "$${SCAN_INTERVAL}"; do
+          echo "[scheduler] scheduled scan"
+          serverdocs run || true
+        done
+
   silverbullet:
     image: ghcr.io/silverbulletmd/silverbullet:latest
     container_name: serverdocs-sb
