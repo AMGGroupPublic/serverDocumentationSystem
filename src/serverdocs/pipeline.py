@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import errno
+import fcntl
 import logging
+import os
+from contextlib import contextmanager
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -49,10 +54,50 @@ def _now() -> str:
 async def run(config: Config, *, dry_run: bool = False) -> int:
     log.info("scan starting: %d server(s), dry_run=%s", len(config.servers), dry_run)
 
-    scans = await _discover_all(config)
-    counts = _render_all(config, scans, dry_run=dry_run)
-    _commit_if_changed(config, counts, dry_run=dry_run)
+    with _run_lock(config.output_dir, dry_run=dry_run) as acquired:
+        if not acquired:
+            log.warning("another serverdocs scan is in progress — skipping this run")
+            return 0
+        scans = await _discover_all(config)
+        counts = _render_all(config, scans, dry_run=dry_run)
+        _commit_if_changed(config, counts, dry_run=dry_run)
     return 0
+
+
+@contextmanager
+def _run_lock(output_dir: Path, *, dry_run: bool, wait_seconds: float = 5.0) -> Iterator[bool]:
+    """Process-wide mutex so concurrent serverdocs runs don't race on the tree.
+
+    In dry-run mode the lock is skipped — dry-run touches nothing on disk and
+    callers may legitimately want to inspect output while a scan is running.
+    """
+    if dry_run:
+        yield True
+        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = output_dir / ".serverdocs.lock"
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        deadline = asyncio.get_event_loop().time() + wait_seconds
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError as exc:
+                if exc.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    raise
+                if asyncio.get_event_loop().time() >= deadline:
+                    yield False
+                    return
+                # Cheap polling — flock has no async API in stdlib.
+                import time as _time
+                _time.sleep(0.25)
+        yield True
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
 
 # ---------------------------------------------------------------- discovery

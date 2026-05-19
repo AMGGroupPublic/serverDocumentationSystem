@@ -14,10 +14,13 @@ _TEMPLATE = """\
 
 Auto-generated documentation of VMs and containers across the fleet.
 
+Below is a list of all configured servers and a note of how many Virtual Machines or
+Docker continers have been discovered.
+
 | Host | Entities | Last scan |
 |---|---|---|
 {% for h in hosts -%}
-| [{{ h.host }}](servers/{{ h.host }}/INDEX.md) | {{ h.entity_count }} | {{ h.last_scan }} |
+| [[servers/{{ h.host }}/INDEX|{{ h.host }}]] | {{ h.entity_count }} | {{ h.last_scan }} |
 {% endfor %}
 
 ---

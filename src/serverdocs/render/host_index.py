@@ -12,7 +12,7 @@ host: {{ host }}
 auto_generated: true
 ---
 
-# {{ host }}
+# DNS Name : {{ host }}
 
 {% if scan_failed %}
 > ⚠ Scan failed for this host on the last run. Existing pages preserved.
@@ -23,7 +23,7 @@ auto_generated: true
 | Type | Name | State | Notes | CPU | Memory (MB) |
 |---|---|---|---|---|---|
 {% for e in entities -%}
-| {{ e.type }} | [{{ e.name }}]({{ e.type }}/{{ e.name }}/NOTES.md) | {{ e.state }} | {{ "✅" if (e.type, e.name) in customized else "❌" }} | {{ e.cpu if e.cpu is not none else "?" }} | {{ e.memory_mb if e.memory_mb is not none else "?" }} |
+| {{ e.type }} | [[servers/{{ host }}/{{ e.type }}/{{ e.name }}/NOTES|{{ e.name }}]] | {{ e.state }} | {{ "✅" if (e.type, e.name) in customized else "❌" }} | {{ e.cpu if e.cpu is not none else "?" }} | {{ e.memory_mb if e.memory_mb is not none else "?" }} |
 {% endfor %}
 {% else %}
 _No entities discovered on this host._
@@ -34,9 +34,12 @@ _No entities discovered on this host._
 These entities were present in previous runs but were not seen on the latest scan.
 
 {% for d in disappeared -%}
-- [{{ d.type }}/{{ d.name }}]({{ d.type }}/{{ d.name }}/NOTES.md)
+- [[servers/{{ host }}/{{ d.type }}/{{ d.name }}/NOTES|{{ d.type }}/{{ d.name }}]]
 {% endfor %}
 {% endif %}
+---
+
+[[README#Server Documentation|← Back to overview]]
 """
 
 

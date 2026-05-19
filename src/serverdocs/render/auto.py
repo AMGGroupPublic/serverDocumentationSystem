@@ -49,6 +49,9 @@ auto_generated: true
 | {{ n.iface }} | {{ n.ipv4 or "" }} | {{ n.ipv6 or "" }} | {{ n.mac or "" }} |
 {% endfor %}
 {% endif %}
+---
+
+[[servers/{{ entity.host }}/INDEX#{{ entity.host }}|← Back to {{ entity.host }}]]
 """
 
 
