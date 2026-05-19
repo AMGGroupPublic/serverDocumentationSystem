@@ -66,7 +66,7 @@ It runs an initial scan on boot, then re-scans every `SCAN_INTERVAL` seconds
 (default `3600` = hourly). Start it with:
 
 ```bash
-cd docker && docker compose up -d serverdocs-scheduler silverbullet
+cd docker && docker compose up -d serverdocs-scheduler serverdocs-sb
 ```
 
 Override the interval inline or in a `.env` file:
@@ -74,6 +74,13 @@ Override the interval inline or in a `.env` file:
 ```bash
 SCAN_INTERVAL=900 docker compose up -d serverdocs-scheduler
 ```
+
+If a scan fails the scheduler retries after `FAILURE_BACKOFF` seconds
+(default `60`) instead of waiting a full interval — also overridable via env.
+
+The scheduler logs every cycle with an ISO-8601 UTC timestamp, the invoked
+command, exit code, duration and the absolute next-wake time, so `docker logs
+serverdocs-scheduler` shows exactly when scans ran and whether they succeeded.
 
 The one-shot `serverdocs` service still exists for manual scans via the
 `./serverdocs` wrapper — both share the same image.
