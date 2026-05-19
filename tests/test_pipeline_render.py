@@ -6,7 +6,7 @@ from pathlib import Path
 
 from serverdocs.config import Config, DiscoveryConfig, GitConfig, ServerEntry
 from serverdocs.model import Entity
-from serverdocs.pipeline import HostScan, _render_all
+from serverdocs.pipeline import HostScan, _remove_orphan_hosts, _render_all
 
 
 def _config(tmp: Path) -> Config:
@@ -222,3 +222,42 @@ def test_dry_run_writes_nothing(tmp_path: Path) -> None:
     scans = [HostScan(server=cfg.servers[0], entities=[_entity()])]
     _render_all(cfg, scans, dry_run=True)
     assert not (cfg.output_dir / "servers").exists()
+
+
+def test_remove_orphan_hosts_deletes_unconfigured_dirs(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    servers = cfg.output_dir / "servers"
+    (servers / "dev001.example.com" / "docker" / "x").mkdir(parents=True)
+    (servers / "old-host.example.com" / "docker" / "y").mkdir(parents=True)
+    (servers / "another-stale.example.com").mkdir(parents=True)
+
+    removed = _remove_orphan_hosts(cfg, dry_run=False)
+
+    assert removed == 2
+    assert (servers / "dev001.example.com").is_dir()
+    assert not (servers / "old-host.example.com").exists()
+    assert not (servers / "another-stale.example.com").exists()
+
+
+def test_remove_orphan_hosts_dry_run_preserves_filesystem(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    servers = cfg.output_dir / "servers"
+    (servers / "old-host.example.com").mkdir(parents=True)
+
+    removed = _remove_orphan_hosts(cfg, dry_run=True)
+
+    assert removed == 1
+    assert (servers / "old-host.example.com").is_dir()
+
+
+def test_remove_orphan_hosts_skips_when_config_empty(tmp_path: Path) -> None:
+    """Safety guard: empty config must not be interpreted as 'delete everything'."""
+    cfg = _config(tmp_path)
+    cfg.servers = []
+    servers = cfg.output_dir / "servers"
+    (servers / "dev001.example.com").mkdir(parents=True)
+
+    removed = _remove_orphan_hosts(cfg, dry_run=False)
+
+    assert removed == 0
+    assert (servers / "dev001.example.com").is_dir()

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.13] - 2026-05-19
+
+### Added
+- Each scan now removes host directories under `servers/` that are no
+  longer present in `servers.yaml`. Previously, removing a host from
+  config left an orphan tree behind that never got re-rendered (so it
+  kept the stale layout forever — e.g. old YAML frontmatter survived
+  past template changes). Safety guard: if config has zero servers
+  the cleanup is skipped rather than nuking the whole tree.
+
 ## [0.2.12] - 2026-05-19
 
 ### Removed

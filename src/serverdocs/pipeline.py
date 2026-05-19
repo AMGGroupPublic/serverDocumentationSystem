@@ -7,6 +7,7 @@ import errno
 import fcntl
 import logging
 import os
+import shutil
 from contextlib import contextmanager
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -58,10 +59,37 @@ async def run(config: Config, *, dry_run: bool = False) -> int:
         if not acquired:
             log.warning("another serverdocs scan is in progress — skipping this run")
             return 0
+        _remove_orphan_hosts(config, dry_run=dry_run)
         scans = await _discover_all(config)
         counts = _render_all(config, scans, dry_run=dry_run)
         _commit_if_changed(config, counts, dry_run=dry_run)
     return 0
+
+
+def _remove_orphan_hosts(config: Config, *, dry_run: bool) -> int:
+    """Delete host directories under output/servers/ that are no longer in config.
+
+    Safety guard: if config has zero servers we treat that as a misconfiguration
+    rather than an instruction to nuke the entire tree.
+    """
+    servers_dir = config.output_dir / "servers"
+    if not servers_dir.is_dir():
+        return 0
+    configured = {s.hostname for s in config.servers}
+    if not configured:
+        log.warning("config has no servers; skipping orphan host cleanup as a safety guard")
+        return 0
+    removed = 0
+    for child in sorted(servers_dir.iterdir()):
+        if not child.is_dir():
+            continue
+        if child.name in configured:
+            continue
+        log.info("removing orphan host directory: %s%s", child.name, " (dry-run)" if dry_run else "")
+        if not dry_run:
+            shutil.rmtree(child)
+        removed += 1
+    return removed
 
 
 @contextmanager
