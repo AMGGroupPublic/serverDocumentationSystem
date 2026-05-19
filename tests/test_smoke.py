@@ -12,7 +12,7 @@ from serverdocs.render.notes import render_notes
 
 
 def test_version() -> None:
-    assert serverdocs.__version__ == "0.2.11"
+    assert serverdocs.__version__ == "0.2.12"
 
 
 def test_adapter_names() -> None:
@@ -33,14 +33,18 @@ def _sample_entity() -> Entity:
 
 
 def test_render_auto_has_inline_attributes() -> None:
-    """Metadata sits at the bottom as SilverBullet inline attributes
-    (queryable) rather than YAML frontmatter at the top, so the page
-    opens with the H1 heading instead of a YAML block."""
+    """Cross-cutting query attributes sit at the bottom as SilverBullet
+    inline attributes. host/auto-generated are intentionally omitted —
+    the path and H1 already carry host, and 'auto-generated' filters
+    nothing useful since only NOTES.md is hand-edited."""
     out = render_auto(_sample_entity())
     assert out.startswith("# mymail (")
-    assert "[host: dev001.example.com]" in out
+    assert "[type: docker]" in out
     assert "[name: mymail]" in out
-    assert "[auto-generated: true]" in out
+    assert "[state: running]" in out
+    assert "[last-seen:" in out
+    assert "auto-generated" not in out
+    assert "[host:" not in out
 
 
 def test_render_notes_transcludes_auto() -> None:

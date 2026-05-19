@@ -44,7 +44,7 @@ _TEMPLATE = """\
 
 [[servers/{{ entity.host }}/INDEX#{{ entity.host }}|← Back to {{ entity.host }}]]
 
-[host: {{ entity.host }}] [type: {{ entity.type }}] [name: {{ entity.name }}] [state: {{ entity.state }}] [last-seen: {{ entity.last_seen }}] [auto-generated: true]
+[type: {{ entity.type }}] [name: {{ entity.name }}] [state: {{ entity.state }}] [last-seen: {{ entity.last_seen }}]
 """
 
 

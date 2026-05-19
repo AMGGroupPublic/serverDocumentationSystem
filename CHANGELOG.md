@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-05-19
+
+### Removed
+- Inline `[auto-generated: true]` attribute from both INDEX and AUTO
+  pages — every machine-rendered page has it, so it filtered nothing.
+- Inline `[host: …]` attribute from INDEX and AUTO pages — the page
+  path and H1 already carry the host name; cross-host enumeration is
+  better served by opening the host's INDEX page directly.
+
+### Changed
+- AUTO.md inline attributes now limited to the four that enable
+  cross-cutting SilverBullet queries you can't easily get from the
+  tree: `type`, `name`, `state`, `last-seen`. INDEX.md has no
+  inline attributes — its content is self-describing.
+
 ## [0.2.11] - 2026-05-19
 
 ### Changed

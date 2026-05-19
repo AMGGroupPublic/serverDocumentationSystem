@@ -35,8 +35,6 @@ These entities were present in previous runs but were not seen on the latest sca
 ---
 
 [[README#Server Documentation|← Back to overview]]
-
-[host: {{ host }}] [auto-generated: true]
 """
 
 
