@@ -25,20 +25,15 @@ services:
     environment:
       # Default: every hour. Override per-deployment.
       SCAN_INTERVAL: "3600"
+      # On a failed scan, back off this many seconds before retrying instead
+      # of waiting a full SCAN_INTERVAL.
+      FAILURE_BACKOFF: "60"
     volumes:
       - ../config:/config:ro
       - ../keys:/keys:ro
       - ../data:/data
-    entrypoint: ["/bin/sh", "-c"]
-    # Initial scan on boot, then loop. Failures of one scan don't stop the loop.
-    command:
-      - |
-        echo "[scheduler] initial scan"
-        serverdocs run || true
-        while sleep "$${SCAN_INTERVAL}"; do
-          echo "[scheduler] scheduled scan"
-          serverdocs run || true
-        done
+    entrypoint: ["/usr/local/bin/scheduler.sh"]
+    command: []
 
   serverdocs-sb:
     image: ghcr.io/silverbulletmd/silverbullet:latest

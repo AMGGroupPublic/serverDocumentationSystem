@@ -7,10 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-05-19
+
+### Changed
+- Scheduler loop moved out of the compose `command:` block into a real shell
+  script (`docker/scheduler.sh`) baked into the image. Each cycle now logs an
+  ISO-8601 timestamp, the invoked command, exit code, duration, and an
+  absolute next-wake-up time, so silent failures (which the old
+  `serverdocs run || true` swallowed) are now visible in `docker logs`.
+
 ### Added
 - `serverdocs-scheduler` compose service: long-running container that scans on
   boot then every `SCAN_INTERVAL` seconds (default 3600). Reuses the same
   `serverdocs:dev` image so a single build covers both services.
+- `FAILURE_BACKOFF` env var (default 60s) — after a failed scan the scheduler
+  retries after this short delay instead of waiting a full `SCAN_INTERVAL`.
+- INT/TERM trap so `docker stop` exits the scheduler cleanly with a log line
+  instead of relying on SIGKILL after the 10s grace period.
 
 ## [0.2.9] - 2026-05-19
 

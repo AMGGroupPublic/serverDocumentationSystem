@@ -16,6 +16,10 @@ COPY src ./src
 RUN pip install --upgrade pip \
  && pip install .
 
+# Scheduler entrypoint used by the serverdocs-scheduler compose service.
+COPY docker/scheduler.sh /usr/local/bin/scheduler.sh
+RUN chmod +x /usr/local/bin/scheduler.sh
+
 # Volumes:
 #   /config — RO mount with servers.yaml
 #   /keys   — RO mount with SSH private keys
