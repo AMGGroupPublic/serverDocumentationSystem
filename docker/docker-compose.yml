@@ -23,3 +23,10 @@ services:
       - ../data/output:/space
     environment:
       - SB_USER=admin:changeme
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
