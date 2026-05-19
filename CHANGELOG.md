@@ -7,23 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.14] - 2026-05-19
-
-### Removed
-- "Disappeared" section from host `INDEX.md`. Entities that previously
-  existed on a host but weren't seen in the latest scan are now deleted
-  outright instead of being listed in a Disappeared block. The block was
-  only useful as historical breadcrumbs; in practice it accumulated stale
-  entries whose `AUTO.md` files retained obsolete templates indefinitely.
-
-### Changed
-- Pipeline now `shutil.rmtree`s entity dirs in `existing - seen` for every
-  successful host scan. Failed scans still preserve everything — we can't
-  distinguish "host unreachable" from "container removed" so we keep the
-  on-disk state. The `-{N}` count in the commit message now reports
-  entities that were deleted on this run rather than entities listed as
-  disappeared.
-
 ## [0.2.13] - 2026-05-19
 
 ### Added

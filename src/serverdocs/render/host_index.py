@@ -1,4 +1,4 @@
-"""Per-host INDEX.md — lists discovered entities on the host."""
+"""Per-host INDEX.md — lists discovered entities and any disappeared ones."""
 
 from __future__ import annotations
 
@@ -23,6 +23,15 @@ _TEMPLATE = """\
 {% else %}
 _No entities discovered on this host._
 {% endif %}
+{% if disappeared %}
+## Disappeared
+
+These entities were present in previous runs but were not seen on the latest scan.
+
+{% for d in disappeared -%}
+- [[servers/{{ host }}/{{ d.type }}/{{ d.name }}/NOTES|{{ d.type }}/{{ d.name }}]]
+{% endfor %}
+{% endif %}
 ---
 
 [[README#Server Documentation|← Back to overview]]
@@ -33,6 +42,7 @@ def render_host_index(
     host: str,
     entities: list[Entity],
     *,
+    disappeared: list[Entity] | None = None,
     scan_failed: bool = False,
     customized_notes: set[tuple[str, str]] | None = None,
 ) -> str:
@@ -40,6 +50,7 @@ def render_host_index(
     return env.from_string(_TEMPLATE).render(
         host=host,
         entities=_sorted_for_display(entities),
+        disappeared=disappeared or [],
         scan_failed=scan_failed,
         customized=customized_notes or set(),
     )

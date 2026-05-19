@@ -213,21 +213,17 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
             if _notes_customized(config.output_dir / rel / "NOTES.md", scaffold):
                 customized.add((entity.type, entity.name))
 
-        # Entities that previously had on-disk dirs but weren't seen in this
-        # scan are deleted outright. Skip on scan_failed — a failed scan
-        # means we don't actually know what's missing.
-        if not scan.scan_failed:
-            for (t, n) in sorted(existing_paths - seen):
-                entity_dir = config.output_dir / "servers" / host / t / n
-                log.info("removing disappeared entity: %s/%s/%s%s",
-                         host, t, n, " (dry-run)" if dry_run else "")
-                if not dry_run and entity_dir.is_dir():
-                    shutil.rmtree(entity_dir)
-                counts.disappeared += 1
+        disappeared = [
+            Entity(host=host, type=t, name=n, state="missing")
+            for (t, n) in sorted(existing_paths - seen)
+        ]
+        if disappeared and not scan.scan_failed:
+            counts.disappeared += len(disappeared)
 
         index_md = render_host_index(
             host,
             scan.entities,
+            disappeared=disappeared,
             scan_failed=scan.scan_failed,
             customized_notes=customized,
         )
