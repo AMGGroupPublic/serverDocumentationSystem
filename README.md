@@ -48,23 +48,30 @@ volume mounts (`/config`, `/keys`, `/data`).
 
 ```bash
 ./serverdocs --help
-./serverdocs trust --config /config/servers.yaml --all
-./serverdocs run --config /config/servers.yaml
+./serverdocs trust --all
+./serverdocs run
 ```
+
+`--config` defaults to `/config/servers.yaml` (the in-container mount of
+`./config/servers.yaml`), so you only need the flag when pointing at a
+non-default file. Override with `--config <path>` or `SERVERDOCS_CONFIG=<path>`.
 
 The wrapper auto-detects `docker compose` (v2) vs `docker-compose` (legacy)
 and disables TTY allocation when piping output.
 
 ## Commands
 
+All commands accept `--config <path>` (defaults to `/config/servers.yaml`;
+also honours the `SERVERDOCS_CONFIG` env var).
+
 | Command | Purpose |
 |---|---|
-| `serverdocs validate-config --config X` | Lint the YAML config and exit |
-| `serverdocs trust --config X HOST [HOST...]` | Run ssh-keyscan and pin keys into the configured known_hosts |
-| `serverdocs trust --config X --all` | Same, for every server in the config |
-| `serverdocs dry-run --config X` | Scan and print diffs, write nothing, no git commit |
-| `serverdocs run --config X` | Full scan: discover, render, commit locally |
-| `serverdocs push --config X` | Push the local doc repo to its configured remote |
+| `serverdocs validate-config` | Lint the YAML config and exit |
+| `serverdocs trust HOST [HOST...]` | Run ssh-keyscan and pin keys into the configured known_hosts |
+| `serverdocs trust --all` | Same, for every server in the config |
+| `serverdocs dry-run` | Scan and print diffs, write nothing, no git commit |
+| `serverdocs run` | Full scan: discover, render, commit locally |
+| `serverdocs push` | Push the local doc repo to its configured remote |
 
 ## Configuration
 

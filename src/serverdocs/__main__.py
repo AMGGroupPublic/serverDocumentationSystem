@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
 
 import click
 
@@ -16,6 +18,27 @@ from .store.git import GitRepo
 from .store.known_hosts import trust_host
 
 log = logging.getLogger("serverdocs")
+
+DEFAULT_CONFIG_PATH = "/config/servers.yaml"
+
+F = TypeVar("F", bound=Callable[..., object])
+
+
+def config_option(f: F) -> F:
+    """``--config`` option shared by every subcommand.
+
+    Defaults to the in-container path so the host-side ``./serverdocs`` wrapper
+    works without an explicit flag. Overridable via flag or ``SERVERDOCS_CONFIG``.
+    """
+    return click.option(  # type: ignore[return-value]
+        "--config",
+        "config_path",
+        type=click.Path(exists=True, dir_okay=False, path_type=Path),
+        default=DEFAULT_CONFIG_PATH,
+        show_default=True,
+        envvar="SERVERDOCS_CONFIG",
+        help="Path to YAML config file. Env: SERVERDOCS_CONFIG.",
+    )(f)
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -34,13 +57,7 @@ def cli(verbose: bool) -> None:
 
 
 @cli.command("validate-config")
-@click.option(
-    "--config",
-    "config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    required=True,
-    help="Path to YAML config file.",
-)
+@config_option
 def validate_config(config_path: Path) -> None:
     """Validate the config file and exit."""
     cfg = load_config(config_path)
@@ -48,12 +65,7 @@ def validate_config(config_path: Path) -> None:
 
 
 @cli.command()
-@click.option(
-    "--config",
-    "config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    required=True,
-)
+@config_option
 def run(config_path: Path) -> None:
     """Discover, render, commit."""
     cfg = load_config(config_path)
@@ -62,12 +74,7 @@ def run(config_path: Path) -> None:
 
 
 @cli.command("dry-run")
-@click.option(
-    "--config",
-    "config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    required=True,
-)
+@config_option
 def dry_run(config_path: Path) -> None:
     """Discover and render, but write nothing and skip git commit."""
     cfg = load_config(config_path)
@@ -76,12 +83,7 @@ def dry_run(config_path: Path) -> None:
 
 
 @cli.command()
-@click.option(
-    "--config",
-    "config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    required=True,
-)
+@config_option
 def push(config_path: Path) -> None:
     """Push the local doc repo to its configured remote."""
     cfg = load_config(config_path)
@@ -96,12 +98,7 @@ def push(config_path: Path) -> None:
 
 
 @cli.command()
-@click.option(
-    "--config",
-    "config_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    required=True,
-)
+@config_option
 @click.option("--all", "all_hosts", is_flag=True, help="Trust every server in the config.")
 @click.option("--port", default=22, show_default=True, help="SSH port.")
 @click.option("--timeout", default=10, show_default=True, help="ssh-keyscan timeout (seconds).")

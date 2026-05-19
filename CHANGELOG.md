@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-19
+
+### Changed
+- `--config` now defaults to `/config/servers.yaml` (the in-container mount path)
+  and reads from `SERVERDOCS_CONFIG` env var. Still overridable per-invocation.
+  Lets `./serverdocs run` work without an explicit flag in the standard layout.
+
 ## [0.2.1] - 2026-05-19
 
 ### Added

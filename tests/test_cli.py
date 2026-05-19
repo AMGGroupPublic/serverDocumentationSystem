@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 from click.testing import CliRunner
 
@@ -36,7 +37,7 @@ def test_version() -> None:
     runner = CliRunner()
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    assert "0.2.1" in result.output
+    assert "0.2.2" in result.output
 
 
 def test_validate_config_ok(tmp_path: Path) -> None:
@@ -61,6 +62,25 @@ def test_dry_run_emits_no_files(tmp_path: Path) -> None:
     result = runner.invoke(cli, ["dry-run", "--config", str(cfg_path)])
     assert result.exit_code == 0
     assert not (tmp_path / "out" / "servers").exists()
+
+
+def test_config_path_from_envvar(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg_path = _write_config(tmp_path)
+    monkeypatch.setenv("SERVERDOCS_CONFIG", str(cfg_path))
+    runner = CliRunner()
+    result = runner.invoke(cli, ["validate-config"])
+    assert result.exit_code == 0
+    assert "1 server" in result.output
+
+
+def test_config_default_missing_fails_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SERVERDOCS_CONFIG", raising=False)
+    runner = CliRunner()
+    # No envvar, no flag → falls back to /config/servers.yaml which doesn't exist
+    # on the test host. Click rejects with exit code 2 before our code runs.
+    result = runner.invoke(cli, ["validate-config"])
+    assert result.exit_code != 0
+    assert "/config/servers.yaml" in result.output
 
 
 def test_run_against_unreachable_host(tmp_path: Path) -> None:
