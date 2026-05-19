@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+dist/
+build/
+
+# Local config and runtime artefacts
+/config/servers.yaml
+/output/
+/data/
+/keys/
+/known_hosts
+
+# Tooling
+.claude/
+
+# IDE
+.idea/
+.vscode/

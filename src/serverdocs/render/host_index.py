@@ -1,0 +1,56 @@
+"""Per-host INDEX.md — lists discovered entities and any disappeared ones."""
+
+from __future__ import annotations
+
+from jinja2 import Environment
+
+from ..model import Entity
+
+_TEMPLATE = """\
+---
+host: {{ host }}
+auto_generated: true
+---
+
+# {{ host }}
+
+{% if scan_failed %}
+> ⚠ Scan failed for this host on the last run. Existing pages preserved.
+{% endif %}
+{% if entities %}
+## Active
+
+| Type | Name | State | CPU | Memory (MB) |
+|---|---|---|---|---|
+{% for e in entities -%}
+| {{ e.type }} | [{{ e.name }}]({{ e.type }}/{{ e.name }}/NOTES.md) | {{ e.state }} | {{ e.cpu if e.cpu is not none else "?" }} | {{ e.memory_mb if e.memory_mb is not none else "?" }} |
+{% endfor %}
+{% else %}
+_No entities discovered on this host._
+{% endif %}
+{% if disappeared %}
+## Disappeared
+
+These entities were present in previous runs but were not seen on the latest scan.
+
+{% for d in disappeared -%}
+- [{{ d.type }}/{{ d.name }}]({{ d.type }}/{{ d.name }}/NOTES.md)
+{% endfor %}
+{% endif %}
+"""
+
+
+def render_host_index(
+    host: str,
+    entities: list[Entity],
+    *,
+    disappeared: list[Entity] | None = None,
+    scan_failed: bool = False,
+) -> str:
+    env = Environment(autoescape=False, keep_trailing_newline=True)
+    return env.from_string(_TEMPLATE).render(
+        host=host,
+        entities=entities,
+        disappeared=disappeared or [],
+        scan_failed=scan_failed,
+    )

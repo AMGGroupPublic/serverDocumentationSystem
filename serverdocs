@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Host-side wrapper: runs the `serverdocs` CLI inside the compose service.
+# Usage: ./serverdocs <subcommand> [args...]
+#   e.g. ./serverdocs --help
+#        ./serverdocs trust --config /config/servers.yaml --all
+#
+# Paths inside the container are fixed by the compose volume mounts:
+#   /config  ← ../config (RO)
+#   /keys    ← ../keys   (RO)
+#   /data    ← ../data   (RW)
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE_DIR="$SCRIPT_DIR/docker"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "error: docker not found on PATH" >&2
+  exit 127
+fi
+
+# Prefer `docker compose` (v2 plugin); fall back to legacy `docker-compose`.
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose)
+else
+  echo "error: neither 'docker compose' nor 'docker-compose' is available" >&2
+  exit 127
+fi
+
+# Disable TTY allocation when not connected to a terminal — keeps pipes/CI clean.
+TTY_FLAGS=()
+if [ ! -t 0 ] || [ ! -t 1 ]; then
+  TTY_FLAGS=(-T)
+fi
+
+cd "$COMPOSE_DIR"
+exec "${COMPOSE[@]}" run --rm "${TTY_FLAGS[@]}" serverdocs "$@"

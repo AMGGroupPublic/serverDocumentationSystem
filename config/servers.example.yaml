@@ -1,0 +1,45 @@
+# serverdocs configuration
+# Copy to servers.yaml and edit.
+
+# Where the generated markdown tree is written.
+output_dir: /data/output
+
+# Directory containing SSH private keys (mounted RO into the container).
+ssh_keys_dir: /keys
+
+# Pinned known_hosts file. Use `serverdocs trust <host>` to add entries
+# rather than disabling host-key checking.
+known_hosts: /data/known_hosts
+
+# Optional Jinja-style URL template for live metrics links on each entity page.
+# Available vars: host, type, name.
+# Leave empty to omit the metrics link.
+metrics_url_template: ""
+# e.g. "https://grafana.example.com/d/host/{{ host }}?var-container={{ name }}"
+
+git:
+  enabled: true
+  author_name: "serverdocs"
+  author_email: "serverdocs@local"
+  # Remote name used by `serverdocs push`. Never pushed automatically.
+  remote: "origin"
+
+discovery:
+  # Max number of hosts contacted concurrently.
+  parallel: 8
+  # Per-command timeout in seconds.
+  timeout_seconds: 30
+
+servers:
+  - name: dev001
+    hostname: dev001.mynetwork.com
+    # ip: 10.0.0.10        # optional, overrides hostname for connection
+    user: root
+    keyfile: dev001_ed25519 # filename inside ssh_keys_dir
+    adapters: [auto]        # or explicit: [lxd, docker]
+
+  - name: dev002
+    hostname: dev002.mynetwork.com
+    user: root
+    keyfile: dev002_ed25519
+    adapters: [docker]

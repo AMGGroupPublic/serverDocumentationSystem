@@ -1,0 +1,1 @@
+"""Entity → markdown rendering."""
