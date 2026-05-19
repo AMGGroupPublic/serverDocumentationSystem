@@ -124,6 +124,7 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
         host = scan.server.hostname
         existing_paths = _existing_entities(config.output_dir, host)
         seen: set[tuple[str, str]] = set()
+        customized: set[tuple[str, str]] = set()
 
         for entity in scan.entities:
             seen.add((entity.type, entity.name))
@@ -134,7 +135,10 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
             elif auto_res.action == "updated":
                 counts.updated += 1
             metrics_url = _render_metrics_url(metrics_tmpl, entity)
-            store.write(rel / "NOTES.md", render_notes(entity, metrics_url=metrics_url), only_if_missing=True)
+            scaffold = render_notes(entity, metrics_url=metrics_url)
+            store.write(rel / "NOTES.md", scaffold, only_if_missing=True)
+            if _notes_customized(config.output_dir / rel / "NOTES.md", scaffold):
+                customized.add((entity.type, entity.name))
 
         disappeared = [
             Entity(host=host, type=t, name=n, state="missing")
@@ -144,7 +148,11 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
             counts.disappeared += len(disappeared)
 
         index_md = render_host_index(
-            host, scan.entities, disappeared=disappeared, scan_failed=scan.scan_failed
+            host,
+            scan.entities,
+            disappeared=disappeared,
+            scan_failed=scan.scan_failed,
+            customized_notes=customized,
         )
         store.write(Path("servers") / host / "INDEX.md", index_md)
 
@@ -164,6 +172,17 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
 
     store.write(Path("README.md"), render_front_page(front_rows, unpushed_commits=unpushed))
     return counts
+
+
+def _notes_customized(path: Path, scaffold: str) -> bool:
+    """True if NOTES.md exists and differs from the freshly-rendered scaffold.
+
+    Dry-run note: in dry-run mode the file may not exist yet; treat that as
+    "not customized" so the tick column reflects on-disk state, not intent.
+    """
+    if not path.exists():
+        return False
+    return path.read_text(encoding="utf-8") != scaffold
 
 
 def _render_metrics_url(template: object, entity: Entity) -> str | None:

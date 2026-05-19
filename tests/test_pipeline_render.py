@@ -96,6 +96,53 @@ def test_scan_failure_does_not_count_as_disappeared(tmp_path: Path) -> None:
     assert "Scan failed" in index
 
 
+def test_notes_customisation_column(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    scans = [
+        HostScan(
+            server=cfg.servers[0],
+            entities=[_entity("mymail"), _entity("nginx")],
+        )
+    ]
+    # First run: both notes are scaffold (X / ❌)
+    _render_all(cfg, scans, dry_run=False)
+    index_first = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
+    assert "| ❌ |" in index_first
+    assert "✅" not in index_first
+
+    # Human edits mymail's notes
+    notes = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail" / "NOTES.md"
+    notes.write_text("# mymail\n\nReal documentation written by a human.\n")
+
+    # Second run: mymail tick, nginx still X
+    _render_all(cfg, scans, dry_run=False)
+    index_second = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
+    mymail_row = next(line for line in index_second.splitlines() if "mymail" in line)
+    nginx_row = next(line for line in index_second.splitlines() if "nginx" in line)
+    assert "✅" in mymail_row
+    assert "❌" in nginx_row
+
+
+def test_host_index_orders_running_first_then_alpha(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    entities = [
+        Entity(host="dev001.example.com", type="docker", name="zeta", state="running"),
+        Entity(host="dev001.example.com", type="docker", name="alpha", state="exited"),
+        Entity(host="dev001.example.com", type="docker", name="bravo", state="running"),
+        Entity(host="dev001.example.com", type="docker", name="ZULU", state="running"),
+        Entity(host="dev001.example.com", type="docker", name="charlie", state="stopped"),
+    ]
+    scans = [HostScan(server=cfg.servers[0], entities=entities)]
+    _render_all(cfg, scans, dry_run=False)
+
+    index = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
+    positions = {n: index.index(f"[{n}]") for n in ["bravo", "zeta", "ZULU", "alpha", "charlie"]}
+    # Running, alpha (case-insensitive): bravo, zeta, ZULU
+    assert positions["bravo"] < positions["zeta"] < positions["ZULU"]
+    # Then non-running, alpha: alpha, charlie
+    assert positions["ZULU"] < positions["alpha"] < positions["charlie"]
+
+
 def test_dry_run_writes_nothing(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     scans = [HostScan(server=cfg.servers[0], entities=[_entity()])]

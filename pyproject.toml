@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "serverdocs"
-version = "0.2.3"
+version = "0.2.5"
 description = "Discover VMs/containers across servers and maintain a markdown wiki tree"
 readme = "README.md"
 license = { file = "LICENSE" }

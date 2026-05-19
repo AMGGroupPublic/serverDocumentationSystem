@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-05-19
+
+### Added
+- Host `INDEX.md` gains a "Notes" column between State and CPU. ✅ when the
+  entity's `NOTES.md` has been edited away from the auto-generated scaffold,
+  ❌ otherwise. Computed during scan by diffing the on-disk file against the
+  freshly-rendered scaffold (deterministic for stable config).
+
+## [0.2.4] - 2026-05-19
+
+### Changed
+- Host `INDEX.md` now lists running entities first (alphabetical, case-insensitive),
+  then everything else (alphabetical, case-insensitive). Previously order matched
+  whatever the adapter returned.
+
 ## [0.2.3] - 2026-05-19
 
 ### Added

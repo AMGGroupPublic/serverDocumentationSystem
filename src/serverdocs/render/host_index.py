@@ -20,10 +20,10 @@ auto_generated: true
 {% if entities %}
 ## Active
 
-| Type | Name | State | CPU | Memory (MB) |
-|---|---|---|---|---|
+| Type | Name | State | Notes | CPU | Memory (MB) |
+|---|---|---|---|---|---|
 {% for e in entities -%}
-| {{ e.type }} | [{{ e.name }}]({{ e.type }}/{{ e.name }}/NOTES.md) | {{ e.state }} | {{ e.cpu if e.cpu is not none else "?" }} | {{ e.memory_mb if e.memory_mb is not none else "?" }} |
+| {{ e.type }} | [{{ e.name }}]({{ e.type }}/{{ e.name }}/NOTES.md) | {{ e.state }} | {{ "✅" if (e.type, e.name) in customized else "❌" }} | {{ e.cpu if e.cpu is not none else "?" }} | {{ e.memory_mb if e.memory_mb is not none else "?" }} |
 {% endfor %}
 {% else %}
 _No entities discovered on this host._
@@ -46,11 +46,18 @@ def render_host_index(
     *,
     disappeared: list[Entity] | None = None,
     scan_failed: bool = False,
+    customized_notes: set[tuple[str, str]] | None = None,
 ) -> str:
     env = Environment(autoescape=False, keep_trailing_newline=True)
     return env.from_string(_TEMPLATE).render(
         host=host,
-        entities=entities,
+        entities=_sorted_for_display(entities),
         disappeared=disappeared or [],
         scan_failed=scan_failed,
+        customized=customized_notes or set(),
     )
+
+
+def _sorted_for_display(entities: list[Entity]) -> list[Entity]:
+    """Running first (alpha by name), then everything else (alpha by name)."""
+    return sorted(entities, key=lambda e: (0 if e.state == "running" else 1, e.name.lower()))
