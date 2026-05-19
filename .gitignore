@@ -10,6 +10,7 @@ htmlcov/
 .coverage
 dist/
 build/
+uv.lock
 
 # Local config and runtime artefacts
 /config/servers.yaml

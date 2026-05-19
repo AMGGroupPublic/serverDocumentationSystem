@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Project status promoted from pre-alpha to **beta**. README updated and
+  `Development Status :: 4 - Beta` classifier added to `pyproject.toml`.
+  The discover → render → commit pipeline is feature-complete and running
+  in production; config schema and CLI surface are now stable.
 - Compose services (`serverdocs`, `serverdocs-scheduler`, `serverdocs-sb`)
   now run as the host UID/GID configured in `docker/.env`
   (`SERVERDOCS_UID`/`SERVERDOCS_GID`, defaulting to `1000:1000`). Previously

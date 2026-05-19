@@ -5,8 +5,11 @@ plain-markdown wiki tree that's editable through [SilverBullet](https://silverbu
 
 ## Status
 
-Pre-alpha — scaffold only. See `IDEA.md` for the original concept and
-`/home/mattl/.claude/plans/please-take-a-look-dreamy-karp.md` for the v1 plan.
+**Beta.** The discovery → render → commit pipeline is feature-complete and
+running in production against AMG's internal fleet. Behaviour and config
+schema are stable, but expect occasional rough edges around new adapters,
+edge-case host topologies, and CLI ergonomics. See `IDEA.md` for the
+original concept.
 
 ## What it does (v1)
 
