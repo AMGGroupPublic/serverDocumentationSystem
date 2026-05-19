@@ -67,30 +67,38 @@ def test_notes_not_overwritten(tmp_path: Path) -> None:
     assert notes_path.read_text() == "CUSTOM HUMAN CONTENT"
 
 
-def test_disappeared_entity_listed_in_index(tmp_path: Path) -> None:
+def test_disappeared_entity_dir_is_deleted(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     # First run with two entities
     scans = [HostScan(server=cfg.servers[0], entities=[_entity("mymail"), _entity("oldsvc")])]
     _render_all(cfg, scans, dry_run=False)
+    oldsvc_dir = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "oldsvc"
+    assert oldsvc_dir.is_dir()
 
-    # Second run with only one — oldsvc disappeared
+    # Second run with only one — oldsvc no longer present
     scans = [HostScan(server=cfg.servers[0], entities=[_entity("mymail")])]
     counts = _render_all(cfg, scans, dry_run=False)
     assert counts.disappeared == 1
+    assert not oldsvc_dir.exists()
 
     index = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
-    assert "Disappeared" in index
-    assert "oldsvc" in index
+    assert "Disappeared" not in index
+    assert "oldsvc" not in index
 
 
-def test_scan_failure_does_not_count_as_disappeared(tmp_path: Path) -> None:
+def test_scan_failure_preserves_existing_entity_dirs(tmp_path: Path) -> None:
+    """A failed scan must not delete entity dirs — we don't know what's actually
+    missing vs. just unreachable."""
     cfg = _config(tmp_path)
     scans = [HostScan(server=cfg.servers[0], entities=[_entity()])]
     _render_all(cfg, scans, dry_run=False)
+    entity_dir = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail"
+    assert entity_dir.is_dir()
 
     failed = HostScan(server=cfg.servers[0], entities=[], scan_failed=True, error="boom")
     counts = _render_all(cfg, scans=[failed], dry_run=False)
     assert counts.disappeared == 0
+    assert entity_dir.is_dir()
 
     index = (cfg.output_dir / "servers" / "dev001.example.com" / "INDEX.md").read_text()
     assert "Scan failed" in index
