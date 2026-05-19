@@ -42,6 +42,15 @@ serverdocs run --config config/servers.yaml
 
 ### Running via the container
 
+The containers run as your host user, so files written into `data/` and
+`keys/` keep host ownership and you can `git push` from `data/output` without
+sudo. Set your UID/GID in `docker/.env`:
+
+```bash
+cp docker/.env.example docker/.env
+# edit if `id -u` / `id -g` aren't 1000
+```
+
 The repo ships a `./serverdocs` wrapper that proxies into the compose service —
 all args are passed through, paths inside the container are the ones from the
 volume mounts (`/config`, `/keys`, `/data`).

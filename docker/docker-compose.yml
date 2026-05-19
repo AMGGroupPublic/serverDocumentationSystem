@@ -6,6 +6,14 @@ services:
     image: serverdocs:dev
     container_name: serverdocs
     restart: "no"
+    # Run as the host user so files written into /data land with host
+    # ownership; otherwise the host user can't `git push` from data/output
+    # without sudo. UID/GID come from docker/.env (see .env.example).
+    user: "${SERVERDOCS_UID:-1000}:${SERVERDOCS_GID:-1000}"
+    environment:
+      HOME: /data
+      USER: serverdocs
+      LOGNAME: serverdocs
     volumes:
       - ../config:/config:ro
       - ../keys:/keys:ro
@@ -22,12 +30,21 @@ services:
     image: serverdocs:dev
     container_name: serverdocs-scheduler
     restart: unless-stopped
+    user: "${SERVERDOCS_UID:-1000}:${SERVERDOCS_GID:-1000}"
     environment:
       # Default: every hour. Override per-deployment.
       SCAN_INTERVAL: "3600"
       # On a failed scan, back off this many seconds before retrying instead
       # of waiting a full SCAN_INTERVAL.
       FAILURE_BACKOFF: "60"
+      # HOME defaults to / when running as a non-root UID without a passwd
+      # entry; some tools (incl. ssh) look for ~/.ssh there. Point it at the
+      # mounted data dir so ssh/git stay well-behaved.
+      HOME: /data
+      # asyncssh and other libs read USER/LOGNAME; there's no passwd entry
+      # for the host UID inside the image, so set it explicitly.
+      USER: serverdocs
+      LOGNAME: serverdocs
     volumes:
       - ../config:/config:ro
       - ../keys:/keys:ro
@@ -39,6 +56,7 @@ services:
     image: ghcr.io/silverbulletmd/silverbullet:latest
     container_name: serverdocs-sb
     restart: unless-stopped
+    user: "${SERVERDOCS_UID:-1000}:${SERVERDOCS_GID:-1000}"
     #ports:
     #  - "3005:3000"
     volumes:

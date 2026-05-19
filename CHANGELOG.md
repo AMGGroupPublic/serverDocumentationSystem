@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Compose services (`serverdocs`, `serverdocs-scheduler`, `serverdocs-sb`)
+  now run as the host UID/GID configured in `docker/.env`
+  (`SERVERDOCS_UID`/`SERVERDOCS_GID`, defaulting to `1000:1000`). Previously
+  the containers ran as root, which made files in `data/output` and
+  `keys/` root-owned and forced the host user to use `sudo` to push the
+  output repo. One-time host migration: chown existing `data/` and `keys/`
+  to your user (or use a one-shot `docker run --rm -v ... alpine chown`).
+- `HOME=/data`, `USER`/`LOGNAME=serverdocs` added to the container env so
+  asyncssh and git tooling work without a passwd entry for the host UID.
+
 ## [0.2.14] - 2026-05-19
 
 ### Added
