@@ -40,7 +40,7 @@ services:
           serverdocs run || true
         done
 
-  silverbullet:
+  serverdocs-sb:
     image: ghcr.io/silverbulletmd/silverbullet:latest
     container_name: serverdocs-sb
     restart: unless-stopped
