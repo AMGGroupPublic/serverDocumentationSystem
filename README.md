@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/icon.png" alt="serverdocs icon" width="128" height="128">
+</p>
+
 # serverdocs
 
 Discover VMs and containers across a fleet of servers via SSH, and maintain a
