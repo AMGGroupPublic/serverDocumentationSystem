@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from serverdocs.config import Config, DiscoveryConfig, GitConfig, ServerEntry
-from serverdocs.model import Entity
+from serverdocs.model import Entity, ImportedDoc
 from serverdocs.pipeline import (
     HostScan,
     _remove_orphan_hosts,
@@ -60,6 +60,35 @@ def test_render_creates_full_tree(tmp_path: Path) -> None:
     assert "https://g.example.com/d/dev001.example.com?c=mymail" in notes
     assert "mymail" in index
     assert "dev001.example.com" in readme
+
+
+def test_imported_readme_written_and_linked(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    entity = _entity()
+    entity.source_url = "https://github.com/acme/web"
+    entity.readme = ImportedDoc(
+        source_path="/srv/acme/web/README.md", content="# web\n\nProject docs.\n"
+    )
+    scans = [HostScan(server=cfg.servers[0], entities=[entity])]
+
+    _render_all(cfg, scans, dry_run=False)
+
+    base = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail"
+    imported = (base / "README.imported.md").read_text()
+    auto = (base / "AUTO.md").read_text()
+
+    assert imported == "# web\n\nProject docs.\n"
+    assert "[[servers/dev001.example.com/docker/mymail/README.imported|Open README]]" in auto
+    assert "[https://github.com/acme/web](https://github.com/acme/web)" in auto
+    assert "/srv/acme/web/README.md" in auto
+
+
+def test_no_imported_readme_file_when_entity_has_none(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    scans = [HostScan(server=cfg.servers[0], entities=[_entity()])]
+    _render_all(cfg, scans, dry_run=False)
+    base = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail"
+    assert not (base / "README.imported.md").exists()
 
 
 def test_notes_not_overwritten(tmp_path: Path) -> None:

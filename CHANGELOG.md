@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Docker adapter now imports a container's project `README.md` into the doc
+  tree. It probes the Compose project directory
+  (`com.docker.compose.project.working_dir`) and the directories of any
+  referenced compose files (`com.docker.compose.project.config_files`),
+  reads the first `README.md` it finds over SSH (capped at 64 KiB), and
+  writes it as machine-owned `README.imported.md` in the entity folder with
+  a link from `AUTO.md`.
+- Docker `AUTO.md` now shows an upstream **Source** link when the image
+  carries an `org.opencontainers.image.source` label.
+
 ### Changed
 - Project status promoted from pre-alpha to **beta**. README updated and
   `Development Status :: 4 - Beta` classifier added to `pyproject.toml`.

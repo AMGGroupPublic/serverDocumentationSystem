@@ -207,6 +207,9 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
                 counts.created += 1
             elif auto_res.action == "updated":
                 counts.updated += 1
+            if entity.readme is not None:
+                # Machine-owned: refreshed each run to track the host README.
+                store.write(rel / "README.imported.md", entity.readme.content)
             metrics_url = _render_metrics_url(metrics_tmpl, entity)
             scaffold = render_notes(entity, metrics_url=metrics_url)
             store.write(rel / "NOTES.md", scaffold, only_if_missing=True)

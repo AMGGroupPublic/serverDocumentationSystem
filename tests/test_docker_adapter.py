@@ -112,3 +112,103 @@ async def test_docker_ps_failure_returns_empty() -> None:
     transport.seed("docker ps", stderr="permission denied", exit_code=1)
     adapter = DockerAdapter("h")
     assert await adapter.discover(transport) == []
+
+
+_PS_COMPOSE = json.dumps({"ID": "c0ffee123456", "Names": "web", "Image": "ghcr.io/acme/web"}) + "\n"
+
+_INSPECT_COMPOSE = json.dumps(
+    [
+        {
+            "Id": "c0ffee123456",
+            "Name": "/web",
+            "Created": "2024-03-01T00:00:00Z",
+            "State": {"Status": "running"},
+            "Config": {
+                "Image": "ghcr.io/acme/web",
+                "Labels": {
+                    "com.docker.compose.project.working_dir": "/srv/acme/web",
+                    "com.docker.compose.project.config_files": "/srv/acme/web/docker-compose.yml",
+                    "org.opencontainers.image.source": "https://github.com/acme/web",
+                },
+            },
+            "HostConfig": {},
+            "Mounts": [],
+            "NetworkSettings": {"Networks": {}},
+        }
+    ]
+)
+
+
+@pytest.mark.asyncio
+async def test_docker_extracts_source_url_and_imports_readme() -> None:
+    transport = FakeTransport()
+    transport.seed("docker ps", stdout=_PS_COMPOSE)
+    transport.seed("docker inspect", stdout=_INSPECT_COMPOSE)
+    transport.seed("head -c 65536 -- /srv/acme/web/README.md", stdout="# web\n\nProject docs.\n")
+    adapter = DockerAdapter("dev001.example.com")
+
+    entities = await adapter.discover(transport)
+    web = entities[0]
+
+    assert web.source_url == "https://github.com/acme/web"
+    assert web.readme is not None
+    assert web.readme.source_path == "/srv/acme/web/README.md"
+    assert "Project docs." in web.readme.content
+
+
+@pytest.mark.asyncio
+async def test_docker_falls_back_to_config_file_dir_for_readme() -> None:
+    """No working_dir label, but a compose config file path is present."""
+    inspect = json.dumps(
+        [
+            {
+                "Id": "c0ffee123456",
+                "Name": "/web",
+                "State": {"Status": "running"},
+                "Config": {
+                    "Image": "x",
+                    "Labels": {
+                        "com.docker.compose.project.config_files": "/opt/stack/compose.yaml",
+                    },
+                },
+                "HostConfig": {},
+                "Mounts": [],
+                "NetworkSettings": {"Networks": {}},
+            }
+        ]
+    )
+    transport = FakeTransport()
+    transport.seed("docker ps", stdout=_PS_COMPOSE)
+    transport.seed("docker inspect", stdout=inspect)
+    transport.seed("head -c 65536 -- /opt/stack/README.md", stdout="readme body")
+    adapter = DockerAdapter("h")
+
+    web = (await adapter.discover(transport))[0]
+    assert web.readme is not None
+    assert web.readme.source_path == "/opt/stack/README.md"
+
+
+@pytest.mark.asyncio
+async def test_docker_no_readme_when_no_compose_labels() -> None:
+    transport = FakeTransport()
+    transport.seed("docker ps", stdout=_PS_OUT)
+    transport.seed("docker inspect", stdout=_INSPECT_OUT)
+    adapter = DockerAdapter("h")
+
+    entities = await adapter.discover(transport)
+    assert all(e.readme is None for e in entities)
+    assert all(e.source_url is None for e in entities)
+
+
+@pytest.mark.asyncio
+async def test_docker_missing_readme_file_leaves_readme_none() -> None:
+    transport = FakeTransport()
+    transport.seed("docker ps", stdout=_PS_COMPOSE)
+    transport.seed("docker inspect", stdout=_INSPECT_COMPOSE)
+    # head returns nonzero when the file is absent — default FakeTransport miss
+    # yields exit_code 127, so no seed for the head command is needed.
+    adapter = DockerAdapter("dev001.example.com")
+
+    web = (await adapter.discover(transport))[0]
+    assert web.readme is None
+    assert web.source_url == "https://github.com/acme/web"

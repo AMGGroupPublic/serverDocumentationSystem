@@ -26,6 +26,15 @@ class Net:
 
 
 @dataclass
+class ImportedDoc:
+    """A document copied in from outside the doc tree (e.g. a container's
+    project README living on the host filesystem)."""
+
+    source_path: str  # absolute host path the content was read from
+    content: str
+
+
+@dataclass
 class Entity:
     host: str
     type: str
@@ -37,6 +46,10 @@ class Entity:
     image: str | None = None
     networks: list[Net] = field(default_factory=list)
     created_at: str | None = None
+    #: Upstream source repo URL (e.g. OCI ``org.opencontainers.image.source``).
+    source_url: str | None = None
+    #: A README imported from the host, copied into the entity's doc folder.
+    readme: ImportedDoc | None = None
     last_seen: str = field(default_factory=lambda: datetime.utcnow().isoformat(timespec="seconds") + "Z")
     extra: dict[str, object] = field(default_factory=dict)
 

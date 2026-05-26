@@ -21,7 +21,15 @@ _TEMPLATE = """\
 | Image | {{ entity.image or "?" }} |
 | Created | {{ entity.created_at or "?" }} |
 | Last seen | {{ entity.last_seen }} |
+{% if entity.source_url %}| Source | [{{ entity.source_url }}]({{ entity.source_url }}) |
+{% endif %}
+{% if entity.readme %}
+## Project README
 
+Imported from `{{ entity.readme.source_path }}` on {{ entity.host }}.
+
+[[servers/{{ entity.host }}/{{ entity.type }}/{{ entity.name }}/README.imported|Open README]]
+{% endif %}
 {% if entity.disks %}
 ## Disks
 
