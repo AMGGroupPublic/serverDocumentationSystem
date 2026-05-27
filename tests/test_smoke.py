@@ -12,7 +12,7 @@ from serverdocs.render.notes import render_notes
 
 
 def test_version() -> None:
-    assert serverdocs.__version__ == "0.2.14"
+    assert serverdocs.__version__ == "0.2.15"
 
 
 def test_adapter_names() -> None:
