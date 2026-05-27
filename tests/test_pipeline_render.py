@@ -74,11 +74,11 @@ def test_imported_readme_written_and_linked(tmp_path: Path) -> None:
     _render_all(cfg, scans, dry_run=False)
 
     base = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail"
-    imported = (base / "README.imported.md").read_text()
+    imported = (base / "README_imported.md").read_text()
     auto = (base / "AUTO.md").read_text()
 
     assert imported == "# web\n\nProject docs.\n"
-    assert "[[servers/dev001.example.com/docker/mymail/README.imported|Open README]]" in auto
+    assert "[[servers/dev001.example.com/docker/mymail/README_imported|Open README]]" in auto
     assert "[https://github.com/acme/web](https://github.com/acme/web)" in auto
     assert "/srv/acme/web/README.md" in auto
 
@@ -88,7 +88,7 @@ def test_no_imported_readme_file_when_entity_has_none(tmp_path: Path) -> None:
     scans = [HostScan(server=cfg.servers[0], entities=[_entity()])]
     _render_all(cfg, scans, dry_run=False)
     base = cfg.output_dir / "servers" / "dev001.example.com" / "docker" / "mymail"
-    assert not (base / "README.imported.md").exists()
+    assert not (base / "README_imported.md").exists()
 
 
 def test_notes_not_overwritten(tmp_path: Path) -> None:

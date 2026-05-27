@@ -209,7 +209,9 @@ def _render_all(config: Config, scans: list[HostScan], *, dry_run: bool) -> Writ
                 counts.updated += 1
             if entity.readme is not None:
                 # Machine-owned: refreshed each run to track the host README.
-                store.write(rel / "README.imported.md", entity.readme.content)
+                # No dot in the stem — SilverBullet reads a dotted wikilink
+                # target as a file extension and 404s on the page lookup.
+                store.write(rel / "README_imported.md", entity.readme.content)
             metrics_url = _render_metrics_url(metrics_tmpl, entity)
             scaffold = render_notes(entity, metrics_url=metrics_url)
             store.write(rel / "NOTES.md", scaffold, only_if_missing=True)

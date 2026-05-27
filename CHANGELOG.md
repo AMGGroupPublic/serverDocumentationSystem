@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.16] - 2026-05-27
+
+### Fixed
+- Imported container README is now written as `README_imported.md` (was
+  `README.imported.md`). SilverBullet read the dot in the wikilink target
+  as a file extension and 404'd on the page lookup, so the "Open README"
+  link from `AUTO.md` was dead.
+
 ## [0.2.15] - 2026-05-27
 
 ### Added

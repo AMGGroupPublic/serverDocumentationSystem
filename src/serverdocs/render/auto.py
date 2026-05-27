@@ -28,7 +28,7 @@ _TEMPLATE = """\
 
 Imported from `{{ entity.readme.source_path }}` on {{ entity.host }}.
 
-[[servers/{{ entity.host }}/{{ entity.type }}/{{ entity.name }}/README.imported|Open README]]
+[[servers/{{ entity.host }}/{{ entity.type }}/{{ entity.name }}/README_imported|Open README]]
 {% endif %}
 {% if entity.disks %}
 ## Disks
