@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.15] - 2026-05-27
+
 ### Added
 - Docker adapter now imports a container's project `README.md` into the doc
   tree. It probes the Compose project directory
