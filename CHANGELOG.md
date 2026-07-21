@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.17] - 2026-07-21
+
+### Added
+- SSH authentication now also honours an unlocked ssh-agent. The transport
+  offers every agent identity (via `SSH_AUTH_SOCK`) alongside the provided
+  `/keys` keyfile, so hosts whose key lives only in the agent authenticate
+  without copying the private key into the image.
+- `docker-compose.yml` optionally bind-mounts the host agent socket into the
+  `serverdocs` and `serverdocs-scheduler` services; it is a no-op when
+  `SSH_AUTH_SOCK` is unset on the host. See `docker/.env.example`.
+
 ## [0.2.16] - 2026-05-27
 
 ### Fixed

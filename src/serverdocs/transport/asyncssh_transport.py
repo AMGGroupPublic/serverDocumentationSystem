@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -43,8 +44,16 @@ class AsyncSSHTransport:
         self._conn: asyncssh.SSHClientConnection | None = None
 
     async def __aenter__(self) -> "AsyncSSHTransport":
-        if not self.keyfile.exists():
-            raise TransportError(f"SSH keyfile missing: {self.keyfile}")
+        # Auth sources: the provided keyfile (if present) and/or an unlocked
+        # ssh-agent reachable via SSH_AUTH_SOCK. asyncssh offers every agent
+        # identity plus the explicit key; the server picks whichever matches.
+        agent_path = os.environ.get("SSH_AUTH_SOCK") or None
+        client_keys = [str(self.keyfile)] if self.keyfile.exists() else []
+        if not client_keys and agent_path is None:
+            raise TransportError(
+                f"no SSH auth available: keyfile missing ({self.keyfile}) "
+                "and no ssh-agent (SSH_AUTH_SOCK unset)"
+            )
         if not self.known_hosts.exists():
             raise TransportError(
                 f"known_hosts missing: {self.known_hosts} — add the host's key first"
@@ -56,7 +65,8 @@ class AsyncSSHTransport:
                     self.host,
                     port=self.port,
                     username=self.user,
-                    client_keys=[str(self.keyfile)],
+                    client_keys=client_keys,
+                    agent_path=agent_path,
                     known_hosts=str(self.known_hosts),
                 ),
                 timeout=self.timeout,

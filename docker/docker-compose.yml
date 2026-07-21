@@ -14,10 +14,17 @@ services:
       HOME: /data
       USER: serverdocs
       LOGNAME: serverdocs
+      # Point ssh/asyncssh at the host agent socket bind-mounted below. The
+      # host shell running `docker compose` must have an unlocked agent
+      # (`ssh-add -l`); leave SSH_AUTH_SOCK unset on the host to fall back to
+      # keyfile-only auth. See docker/.env.example.
+      SSH_AUTH_SOCK: ${SSH_AUTH_SOCK:+/ssh-agent}
     volumes:
       - ../config:/config:ro
       - ../keys:/keys:ro
       - ../data:/data
+      # Host ssh-agent socket (no-op when SSH_AUTH_SOCK is unset on the host).
+      - ${SSH_AUTH_SOCK:-/dev/null}:/ssh-agent
     command: ["run", "--config", "/config/servers.yaml"]
 
   serverdocs-scheduler:
@@ -45,10 +52,16 @@ services:
       # for the host UID inside the image, so set it explicitly.
       USER: serverdocs
       LOGNAME: serverdocs
+      # See the serverdocs service above. NOTE: this is a long-running daemon;
+      # a host logout/reboot or agent restart leaves the socket mount stale
+      # until the container is recreated. Prefer keyfile auth here, or accept
+      # the fragility. Empty when SSH_AUTH_SOCK is unset on the host.
+      SSH_AUTH_SOCK: ${SSH_AUTH_SOCK:+/ssh-agent}
     volumes:
       - ../config:/config:ro
       - ../keys:/keys:ro
       - ../data:/data
+      - ${SSH_AUTH_SOCK:-/dev/null}:/ssh-agent
     entrypoint: ["/usr/local/bin/scheduler.sh"]
     command: []
 
